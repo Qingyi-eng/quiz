@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>PLLA临床试验题库</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,"Microsoft YaHei",sans-serif; background:#f5f5f5; padding:12px; padding-bottom:80px; }
+.header { text-align:center; padding:16px 8px; background:#fff; border-radius:8px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.header h1 { font-size:16px; color:#333; }
+.header p { font-size:11px; color:#999; margin-top:4px; }
+.question { background:#fff; border-radius:8px; padding:14px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+.q-stem { font-size:14px; color:#333; line-height:1.6; margin-bottom:8px; }
+.q-num { color:#1890ff; font-weight:bold; }
+.option { padding:8px 12px; margin:5px 0; border:1px solid #e8e8e8; border-radius:6px; font-size:13px; cursor:pointer; transition:all 0.15s; }
+.option:hover { border-color:#1890ff; background:#e6f7ff; }
+.option.selected { border-color:#1890ff; background:#e6f7ff; }
+.option.correct { border-color:#52c41a; background:#f6ffed; color:#52c41a; }
+.option.wrong { border-color:#ff4d4f; background:#fff2f0; color:#ff4d4f; }
+.feedback { font-size:12px; margin-top:6px; padding:6px 10px; border-radius:4px; display:none; }
+.feedback.show { display:block; }
+.feedback.correct { background:#f6ffed; color:#52c41a; }
+.feedback.wrong { background:#fff2f0; color:#ff4d4f; }
+.btn-wrap { position:fixed; bottom:0; left:0; right:0; padding:12px; background:#fff; box-shadow:0 -1px 6px rgba(0,0,0,0.08); text-align:center; }
+.btn { background:#1890ff; color:#fff; border:none; padding:12px 0; width:100%; max-width:400px; border-radius:6px; font-size:16px; cursor:pointer; }
+.btn:active { background:#096dd9; }
+.btn:disabled { background:#ccc; }
+.score { text-align:center; font-size:18px; font-weight:bold; padding:12px; margin:12px 0; display:none; border-radius:8px; }
+.score.show { display:block; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.score.good { color:#52c41a; }
+.score.ok { color:#faad14; }
+.score.bad { color:#ff4d4f; }
+.loading { text-align:center; padding:40px; color:#999; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>PLLA临床试验题库</h1>
+    <p>（50道单选题·随机10题扫码答题）</p>
+</div>
+
+<div id="quiz-container"><div class="loading">🔄 正在随机抽题...</div></div>
+
+<div class="btn-wrap">
+    <button class="btn" id="submit-btn" onclick="submitQuiz()">提交评分</button>
+    <button class="btn" id="retry-btn" onclick="location.reload()" style="display:none; background:#52c41a; margin-top:8px;">再来一次</button>
+</div>
+
+<div class="score" id="score"></div>
+
+<script>
+// ========== 全部50题数据（内嵌） ==========
+const ALL_QUESTIONS = [{"stem": "本试验采用什么类型的对照？", "options": ["A. 阳性对照", "B. 安慰剂对照", "C. 无治疗对照", "D. 历史对照"], "answer": "", "section": "一、试验设计与分组"}, {"stem": "选择无治疗对照的主要原因是什么？", "options": ["A. 伦理要求", "B. 目前没有任何面部填充剂被NMPA批准用于改善颞部凹陷", "C. 降低试验成本", "D. 便于操作"], "answer": "", "section": "一、试验设计与分组"}, {"stem": "本试验中，对谁实施了设盲？", "options": ["A. 受试者", "B. 非盲研究者", "C. 评价研究者（盲态评价研究者）", "D. 申办者"], "answer": "", "section": "一、试验设计与分组"}, {"stem": "临床试验的偏倚控制措施不包括以下哪一项？", "options": ["A. 通过中央随机系统区组随机化", "B. 多中心设计", "C. 受试者设盲", "D. 评价者设盲"], "answer": "", "section": "一、试验设计与分组"}, {"stem": "本试验采用哪种假设检验类型？", "options": ["A. 非劣效检验", "B. 等效检验", "C. 优效性检验", "D. 差异性检验"], "answer": "", "section": "一、试验设计与分组"}, {"stem": "随机化采用的分层因素是什么？", "options": ["A. 年龄", "B. 性别", "C. 临床试验机构", "D. ATHS评分等级"], "answer": "", "section": "一、试验设计与分组"}, {"stem": "试验组与对照组受试者的分配比例通过什么系统实现？", "options": ["A. 人工随机表", "B. 基于网络的中央随机系统", "C. 各中心自主随机", "D. 按入组顺序交替分配"], "answer": "", "section": "一、试验设计与分组"}, {"stem": "本试验的试验周期为？", "options": ["A. 3～6个月", "B. 6～12个月", "C. 6～18个月", "D. 12～24个月"], "answer": "", "section": "二、访视安排"}, {"stem": "试验组受试者共设置多少次访视？", "options": ["A. 4次", "B. 7次", "C. 10次", "D. 12次"], "answer": "", "section": "二、访视安排"}, {"stem": "对照组受试者共设置多少次访视？", "options": ["A. 2次", "B. 4次", "C. 7次", "D. 10次"], "answer": "", "section": "二、访视安排"}, {"stem": "试验组V1是指哪个阶段？", "options": ["A. 首次注射", "B. 筛选期（-14天～0天）", "C. 第二次注射", "D. 末次注射后随访"], "answer": "", "section": "二、访视安排"}, {"stem": "试验组第三次注射（V4）在什么时间进行？", "options": ["A. 首次注射后2周", "B. 第二次注射后4周±3天", "C. 首次注射后8周", "D. 随机后12周"], "answer": "", "section": "二、访视安排"}, {"stem": "试验组V5（末次注射后4周）的访视类型是？", "options": ["A. 电话随访", "B. 临床随访", "C. 远程随访", "D. 不需要随访"], "answer": "", "section": "二、访视安排"}, {"stem": "试验组末次注射后72周对应第几次访视？", "options": ["A. V7", "B. V8", "C. V9", "D. V10"], "answer": "", "section": "二、访视安排"}, {"stem": "试验组和对照组的末次访视分别是什么时候？", "options": ["A. 试验组V10（末次注射后72周），对照组V4（随机后24周）", "B. 试验组V9，对照组V3", "C. 试验组V7，对照组V4", "D. 试验组V8，对照组V2"], "answer": "", "section": "二、访视安排"}, {"stem": "试验组最多可进行几次注射？", "options": ["A. 2次", "B. 3次", "C. 4次", "D. 不超过5次"], "answer": "", "section": "二、访视安排"}, {"stem": "每次注射后约多长时间评估是否需要进行下一次注射？", "options": ["A. 1周", "B. 2～4周", "C. 6～8周", "D. 12周"], "answer": "", "section": "三、入排标准"}, {"stem": "受试者入选的年龄范围是？", "options": ["A. 18～55岁", "B. 18～65岁", "C. 20～60岁", "D. 18～70岁"], "answer": "", "section": "三、入排标准"}, {"stem": "ATHS评分的入选要求是？", "options": ["A. 双侧均为1级", "B. 双侧均在2～4级，且两侧差异不超过1级", "C. 单侧达到4级即可", "D. 双侧均在3～5级"], "answer": "", "section": "三、入排标准"}, {"stem": "以下哪项不是排除标准？", "options": ["A. 有蟹足肿病史和增生性疤痕或瘢痕体质", "B. 筛选前6个月有颞部外伤史", "C. ATHS评分3级", "D. 筛选前2周内服用抗凝药物"], "answer": "", "section": "三、入排标准"}, {"stem": "筛选前多长时间内颞部区域有半永久性填充物治疗史者需排除？", "options": ["A. 6个月内", "B. 12个月内", "C. 24个月内", "D. 36个月内"], "answer": "", "section": "三、入排标准"}, {"stem": "筛选前多长时间内颞部区域有暂时性可吸收填充物治疗史者需排除？", "options": ["A. 3个月内", "B. 6个月内", "C. 12个月内", "D. 24个月内"], "answer": "", "section": "三、入排标准"}, {"stem": "筛选前多长时间内面部接受过肉毒杆菌毒素治疗者需排除？", "options": ["A. 1个月内", "B. 3个月内", "C. 6个月内", "D. 12个月内"], "answer": "", "section": "三、入排标准"}, {"stem": "以下哪项实验室检查异常且入组前未纠正时需要排除？", "options": ["A. ALT、AST大于2.5倍正常值上限且有临床意义", "B. 血糖轻度升高但无临床意义", "C. 白细胞轻微升高", "D. 尿酸偏高"], "answer": "", "section": "三、入排标准"}, {"stem": "受试者脱落后的处理措施不包括以下哪项？", "options": ["A. 采取登门拜访、电话、微信等方式联系受试者", "B. 询问不愿继续参加的原因", "C. 直接删除该受试者的所有数据", "D. 保留源数据和源文件"], "answer": "", "section": "四、注射操作"}, {"stem": "PLLA产品的注射层次是？", "options": ["A. 表皮层", "B. 真皮层", "C. 皮下组织", "D. 肌肉层"], "answer": "", "section": "四、注射操作"}, {"stem": "进针时首先以什么角度插入皮下组织？", "options": ["A. 10～20°", "B. 30～40°", "C. 45～60°", "D. 90°"], "answer": "", "section": "四、注射操作"}, {"stem": "进针后推进时以什么角度推进针头？", "options": ["A. 10～20°", "B. 30～40°", "C. 45～60°", "D. 90°"], "answer": "", "section": "四、注射操作"}, {"stem": "推进针头后，以下哪项操作是必须执行的？", "options": ["A. 立即推注", "B. 回抽确认是否进入血管", "C. 旋转针头", "D. 退出后重新进针"], "answer": "", "section": "四、注射操作"}, {"stem": "回抽时如果血液返回到注射器，应如何处理？", "options": ["A. 继续缓慢推注", "B. 立即撤回针头，按压注射区直到出血停止，准备新注射器", "C. 调整角度继续注射", "D. 忽略并继续"], "answer": "", "section": "四、注射操作"}, {"stem": "本产品采用的注射技术是？", "options": ["A. 团注技术", "B. 线状或隧道逆行注射技术（边拔针边推进活塞）", "C. 扇形注射技术", "D. 多点垂直注射"], "answer": "", "section": "四、注射操作"}, {"stem": "每点注射的量为多少？", "options": ["A. 0.05～0.1mL", "B. 0.1～0.2mL", "C. 0.3～0.5mL", "D. 0.5～1.0mL"], "answer": "", "section": "四、注射操作"}, {"stem": "每注射几点后应进行循环式按摩？", "options": ["A. 1～2点", "B. 3～4点", "C. 5～6点", "D. 所有点注射完毕后"], "answer": "", "section": "四、注射操作"}, {"stem": "单侧单次注射的最大用量是多少？", "options": ["A. 不超过3mL", "B. 不超过5mL", "C. 不超过7mL", "D. 不超过10mL"], "answer": "", "section": "五、注射后处理与注意事项"}, {"stem": "注射结束后建议在治疗区域按摩多长时间？", "options": ["A. 30秒", "B. 1分钟", "C. 2分钟", "D. 5分钟"], "answer": "", "section": "五、注射后处理与注意事项"}, {"stem": "按摩的方式是什么？", "options": ["A. 直线推按", "B. 点压式按摩", "C. 循环方式按摩", "D. 拍打式按摩"], "answer": "", "section": "五、注射后处理与注意事项"}, {"stem": "为减少注射后水肿和/或瘀斑，应采取什么措施？", "options": ["A. 热敷", "B. 冰包冷敷（避免直接接触）", "C. 加压包扎", "D. 抬高注射部位"], "answer": "", "section": "五、注射后处理与注意事项"}, {"stem": "PLLA产品在注射后，凹陷是否需要过度填满？", "options": ["A. 需要，应过度填满以确保效果", "B. 不需要，因凹陷随后会慢慢平复", "C. 应根据受试者要求决定", "D. 需要填到与周围完全齐平"], "answer": "", "section": "五、注射后处理与注意事项"}, {"stem": "本产品使用前是否需要做皮试？", "options": ["A. 必须皮试", "B. 不需要皮试", "C. 仅在过敏体质者需要", "D. 根据医生决定"], "answer": "", "section": "五、注射后处理与注意事项"}, {"stem": "以下哪项是本产品的绝对禁忌操作？", "options": ["A. 皮下组织注射", "B. 注射入血管", "C. 线状注射", "D. 复溶后注射"], "answer": "", "section": "五、注射后处理与注意事项"}, {"stem": "如果针头堵塞或变钝，应如何处理？", "options": ["A. 用力推注疏通", "B. 用酒精擦拭后继续使用", "C. 更换针头", "D. 停止注射"], "answer": "", "section": "五、注射后处理与注意事项"}, {"stem": "每瓶产品可以用于几人？", "options": ["A. 可多人共用一瓶", "B. 只能用于一人的单次治疗", "C. 可一人多次使用同一瓶", "D. 由医生根据情况决定"], "answer": "", "section": "六、疗效评价"}, {"stem": "本试验的主要疗效评价指标是？", "options": ["A. GAIS评分", "B. 受试者满意率", "C. ATHS纠正有效率（末次注射/随机后24周）", "D. VAS疼痛评分"], "answer": "", "section": "六、疗效评价"}, {"stem": "ATHS纠正有效率的定义是？", "options": ["A. 单侧ATHS评分改善≥1级的比例", "B. 双侧ATHS评分较基线均改善≥1级的受试者比例", "C. ATHS评分达到0级的比例", "D. 受试者自评改善的比例"], "answer": "", "section": "六、疗效评价"}, {"stem": "主要疗效指标由谁进行评定？", "options": ["A. 非盲研究者", "B. 受试者", "C. 盲态评价研究者", "D. CRO监查员"], "answer": "", "section": "六、疗效评价"}, {"stem": "GAIS评分由哪些人员进行评价？", "options": ["A. 仅盲态评价研究者", "B. 非盲研究者和受试者", "C. 仅非盲研究者", "D. 申办者和研究者"], "answer": "", "section": "六、疗效评价"}, {"stem": "次要评价指标不包括以下哪项？", "options": ["A. ATHS评分", "B. GAIS评分", "C. 受试者满意率", "D. 血常规检查结果"], "answer": "", "section": "七、安全性评价"}, {"stem": "注射部位局部反应的观察时间是从注射后即刻至注射后多少天？", "options": ["A. 3天", "B. 7天", "C. 14天", "D. 30天"], "answer": "", "section": "七、安全性评价"}, {"stem": "受试者日志由谁填写？记录什么内容？", "options": ["A. 研究者填写，记录生命体征", "B. 受试者自行记录注射后14天内的异常症状/体征", "C. CRC填写，记录合并用药", "D. 盲态评价者填写，记录ATHS评分"], "answer": "", "section": "七、安全性评价"}, {"stem": "试验组受试者的不良事件观察时间范围是？", "options": ["A. 从筛选期至首次注射", "B. 从注射后即刻至末次注射后72周", "C. 仅注射当日", "D. 末次注射后24周内"], "answer": "", "section": "七、安全性评价"}];
+
+// ========== 随机抽10题 + 重新编号 ==========
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+const SELECTED = shuffle(ALL_QUESTIONS).slice(0, 10);
+const ANSWERS = {};
+SELECTED.forEach((q, i) => { ANSWERS[i + 1] = q.answer; });
+
+// 渲染题目
+function renderQuiz() {
+    let html = '';
+    SELECTED.forEach((q, i) => {
+        const n = i + 1;
+        html += '<div class="question" id="q' + n + '">';
+        html += '<div class="q-stem"><span class="q-num">' + n + '.</span> ' + q.stem + '</div>';
+        html += '<div class="options">';
+        q.options.forEach(opt => {
+            html += '<div class="option" onclick="selectOption(this,' + n + ',\'' + opt[0] + '\')" data-q="' + n + '" data-opt="' + opt[0] + '">' + opt + '</div>';
+        });
+        html += '</div>';
+        html += '<div class="feedback" id="fb' + n + '"></div>';
+        html += '</div>';
+    });
+    document.getElementById('quiz-container').innerHTML = html;
+}
+
+let selections = {};
+
+function selectOption(el, qNum, opt) {
+    const parent = el.parentElement;
+    parent.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    selections[qNum] = opt;
+    
+    const fb = document.getElementById('fb' + qNum);
+    if (opt === ANSWERS[qNum]) {
+        el.classList.add('correct');
+        fb.className = 'feedback correct show';
+        fb.textContent = '✅ 正确！';
+    } else {
+        el.classList.add('wrong');
+        fb.className = 'feedback wrong show';
+        fb.textContent = '❌ 错误，正确答案是 ' + ANSWERS[qNum];
+    }
+    
+    parent.querySelectorAll('.option').forEach(o => o.style.pointerEvents = 'none');
+}
+
+function submitQuiz() {
+    let correct = 0, total = Object.keys(ANSWERS).length, unanswered = 0;
+    for (let i = 1; i <= total; i++) {
+        if (!selections[i]) unanswered++;
+        else if (selections[i] === ANSWERS[i]) correct++;
+    }
+    if (unanswered > 0) {
+        alert('还有 ' + unanswered + ' 题未作答，请全部答完再提交~');
+        return;
+    }
+    const scoreDiv = document.getElementById('score');
+    const pct = correct / total;
+    let cls = 'bad', emoji = '😢';
+    if (pct >= 0.8) { cls = 'good'; emoji = '🎉'; }
+    else if (pct >= 0.6) { cls = 'ok'; emoji = '👍'; }
+    scoreDiv.textContent = emoji + ' 得分：' + correct + ' / ' + total;
+    scoreDiv.className = 'score show ' + cls;
+    document.getElementById('submit-btn').style.display = 'none';
+    document.getElementById('retry-btn').style.display = 'inline-block';
+}
+
+renderQuiz();
+</script>
+
+</body>
+</html>
